@@ -96,7 +96,7 @@ def get_schema() -> dict:
     """
     try:
         tables = run_sql_query(
-            "SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name;",
+            "SELECT name, sql FROM sqlite_master WHERE type='table' AND name <> '_cf_KV' ORDER BY name;",
             write_ok=False
         )
         if tables["status"] != "success":
