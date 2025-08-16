@@ -21,3 +21,4 @@ The `date` field is a text field, that must be cast to a date with the `DATE()` 
 The `value` is the value of the `metric_type` at the time of the `date`. 
 The `metric_types` table has the metric types that will be asked about. 
 If someone asks about ETH, USD, CPI, or stablecoin, run a query in the `metric_types` table to find the id of the metric_type to use in your query for the `metric_data` table.
+If you want to do a subquery to the `metric_types` table, the `name` in the `metric_types` table is always lowercase.
