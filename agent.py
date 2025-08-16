@@ -86,6 +86,9 @@ def run_sql_query(query: str, write_ok: bool = False) -> dict:
     except Exception as e:
         return {"status": "error", "query": query, "error": f"Unexpected error: {str(e)}"}
 
+def get_current_date() -> str:
+    return datetime.datetime.now().strftime("%Y-%m-%d")
+
 
 # Load the prompt from file
 prompt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompt.txt')
@@ -107,5 +110,5 @@ root_agent = Agent(
         "Agent to build SQL queries for a crypto analytics database."
     ),
     instruction=full_instruction,
-    tools=[run_sql_query],
+    tools=[run_sql_query, get_current_date],
 )
