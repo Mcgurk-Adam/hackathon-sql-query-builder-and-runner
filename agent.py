@@ -89,19 +89,35 @@ def run_sql_query(query: str, write_ok: bool = False) -> dict:
 def get_current_date() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d")
 
+def get_schema() -> dict:
+    """
+    Fetches the current database schema from Cloudflare D1.
+    Returns a dictionary keyed by table name with columns + types.
+    """
+    try:
+        tables = run_sql_query(
+            "SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name;",
+            write_ok=False
+        )
+        if tables["status"] != "success":
+            return tables
+
+        schema = {}
+        for t in tables["results"]:
+            name = t["name"]
+            cols = run_sql_query(f"PRAGMA table_info({name});", write_ok=False)
+            schema[name] = {
+                "create_sql": t["sql"],
+                "columns": cols.get("results", []),
+            }
+
+        return {"status": "success", "schema": schema}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 # Load the prompt from file
 prompt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompt.txt')
 prompt_text = load_prompt_from_file(prompt_path)
-schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schema.txt')
-schema_text = load_prompt_from_file(schema_path)
-
-# If prompt loading fails, use a fallback message
-if not prompt_text or not schema_text:
-    full_instruction = "Error loading prompt. Please check the prompt.txt or schema.txt file."
-else:
-    # Concatenate the prompt text with the schema text
-    full_instruction = prompt_text + schema_text
 
 root_agent = Agent(
     name="query_builder_agent",
@@ -109,6 +125,6 @@ root_agent = Agent(
     description=(
         "Agent to build SQL queries for a crypto analytics database."
     ),
-    instruction=full_instruction,
-    tools=[run_sql_query, get_current_date],
+    instruction=prompt_text,
+    tools=[run_sql_query, get_current_date, get_schema],
 )
