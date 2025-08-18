@@ -82,8 +82,14 @@ def run_sql_query(query: str, write_ok: bool = False) -> dict:
             
         return {"status": "success", "query": query, "results": results}
     except requests.exceptions.RequestException as e:
+        print("error in query")
+        print("query is ", query)
+        print("error is ", str(e))
         return {"status": "error", "query": query, "error": str(e)}
     except Exception as e:
+        print("error in query")
+        print("query is ", query)
+        print("error is ", str(e))
         return {"status": "error", "query": query, "error": f"Unexpected error: {str(e)}"}
 
 def get_current_date() -> str:
@@ -115,6 +121,17 @@ def get_schema() -> dict:
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+def resolve_metric(name_or_alias: str) -> dict:
+    """
+    Resolves a metric alias (e.g. 'ETH', 'usd', 'cpi') to its id in metric_types.
+    Returns {status, metric_id, name}.
+    """
+    sql = "SELECT id, name FROM metric_types WHERE LOWER(name) = LOWER( '" + name_or_alias + "' ) LIMIT 1;"
+    res = run_sql_query(sql, write_ok=False)
+    if res:
+        return {"status": "success", "metric_id": res["results"][0]["id"], "name": res["results"][0]["name"]}
+    return {"status": "error", "error": f"Metric '{name_or_alias}' not found"}
+
 # Load the prompt from file
 prompt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompt.txt')
 prompt_text = load_prompt_from_file(prompt_path)
@@ -126,5 +143,5 @@ root_agent = Agent(
         "Agent to build SQL queries for a crypto analytics database."
     ),
     instruction=prompt_text,
-    tools=[run_sql_query, get_current_date, get_schema],
+    tools=[run_sql_query, get_current_date, get_schema, resolve_metric],
 )
